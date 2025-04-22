@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
     "incremental": true,
-    "rootDir": "./Code_Written_In_Typescript",
+    "rootDir": "./Typescript_Source_Code",
     "outDir": "./Compiled_From_Typescript_Into_Javascript",
     "strict": true,
     "moduleResolution": "nodenext",
     "verbatimModuleSyntax": true,
-    "baseUrl": "./Code_Written_In_Typescript",
+    "baseUrl": "./Typescript_Source_Code",
     "module": "nodenext",
     "target": "esnext",
     "lib": [
