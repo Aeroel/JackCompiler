@@ -1,31 +1,31 @@
-export { Tokens_To_Tree_Converter };
+export { Tokens_To_VM_Code_Converter };
 import fs from 'node:fs';
 import { Convenient_Way_To_Advance_Through_Tokens } from './Convenient_Way_To_Advance_Through_Tokens.js';
 import { Helper_Functions } from './Helper_Functions.js';
 import { Tokens_Saver } from './Tokens_Saver.js';
 import type { Token } from '#root/Type_Definitions.js';
 
-class Tokens_To_Tree_Converter {
+class Tokens_To_VM_Code_Converter {
 
     static tokens: Token[] = [];
     static xml = '';
     static tokenizer: Convenient_Way_To_Advance_Through_Tokens;
-    static save_tree_XML_in_same_dir_as_path(filePath: string) {
+    static Save_VM_Code_In_Same_Dir_As_Path(filePath: string) {
         const xmlFilePath = filePath + ".tree.xml";
         console.log(`[Tokens To Tree XML] Saving XML into new file at ${xmlFilePath}`);
         const xml = this.xml//formatXml(this.xml, { collapseContent: true, indentation: '  ', throwOnFailure: false });
         fs.writeFileSync(xmlFilePath, xml);
     }
     static appendToXML(str: string) {
-        Tokens_To_Tree_Converter.xml += `${str}` + Helper_Functions.getNewline();
+        Tokens_To_VM_Code_Converter.xml += `${str}` + Helper_Functions.getNewline();
     }
-    static parse_tokens_into_tree_XML(tokens: Token[]) {
-        console.log(`[Tokens To Tree XML] Converting tokens array of length ${tokens.length} into tree XML `);
+    static Parse_Tokens_Into_VM_Code(tokens: Token[]) {
+        console.log(`[Tokens To VM Code ] Converting tokens array of length ${tokens.length} into VM Code `);
 
-        Tokens_To_Tree_Converter.tokens = tokens;
-        Tokens_To_Tree_Converter.tokenizer = new Convenient_Way_To_Advance_Through_Tokens(tokens);
+        Tokens_To_VM_Code_Converter.tokens = tokens;
+        Tokens_To_VM_Code_Converter.tokenizer = new Convenient_Way_To_Advance_Through_Tokens(tokens);
 
-        Tokens_To_Tree_Converter.compile_class();
+        Tokens_To_VM_Code_Converter.compile_class();
     }
     static compile_class_name() {
         this.compile_identifier();
@@ -34,12 +34,12 @@ class Tokens_To_Tree_Converter {
 
         this.appendToXML(`<class>`);
 
-        Tokens_To_Tree_Converter.consume("class");
-        Tokens_To_Tree_Converter.compile_class_name(); // class name
-        Tokens_To_Tree_Converter.consume("{");
-        Tokens_To_Tree_Converter.compile_zero_or_more_class_var_decs();
-        Tokens_To_Tree_Converter.compile_zero_or_more_class_subroutine_decs();
-        Tokens_To_Tree_Converter.consume("}");
+        Tokens_To_VM_Code_Converter.consume("class");
+        Tokens_To_VM_Code_Converter.compile_class_name(); // class name
+        Tokens_To_VM_Code_Converter.consume("{");
+        Tokens_To_VM_Code_Converter.compile_zero_or_more_class_var_decs();
+        Tokens_To_VM_Code_Converter.compile_zero_or_more_class_subroutine_decs();
+        Tokens_To_VM_Code_Converter.consume("}");
 
         this.appendToXML(`</class>`);
 
@@ -52,13 +52,13 @@ class Tokens_To_Tree_Converter {
         prepare_for_next_iteration();
 
         while (decsLeftToProcess) {
-            Tokens_To_Tree_Converter.compile_class_var_dec();
+            Tokens_To_VM_Code_Converter.compile_class_var_dec();
             prepare_for_next_iteration();
 
         }
 
         function prepare_for_next_iteration() {
-            decsLeftToProcess = Boolean(Tokens_To_Tree_Converter.tokenizer.tokenValue() === 'field' || Tokens_To_Tree_Converter.tokenizer.tokenValue() === 'static');
+            decsLeftToProcess = Boolean(Tokens_To_VM_Code_Converter.tokenizer.tokenValue() === 'field' || Tokens_To_VM_Code_Converter.tokenizer.tokenValue() === 'static');
         }
 
     }
@@ -70,14 +70,14 @@ class Tokens_To_Tree_Converter {
         prepare_for_an_iteration();
 
         while (subroutine_decs_left_to_process) {
-            Tokens_To_Tree_Converter.compile_class_subroutine_dec();
+            Tokens_To_VM_Code_Converter.compile_class_subroutine_dec();
 
             prepare_for_an_iteration();
         }
 
         function prepare_for_an_iteration() {
 
-            token_is_constructor_or_function_or_method = Boolean(["constructor", "method", "function"].includes(Tokens_To_Tree_Converter.tokenizer.tokenValue()));
+            token_is_constructor_or_function_or_method = Boolean(["constructor", "method", "function"].includes(Tokens_To_VM_Code_Converter.tokenizer.tokenValue()));
 
             subroutine_decs_left_to_process = Boolean(token_is_constructor_or_function_or_method);
         }
@@ -85,13 +85,13 @@ class Tokens_To_Tree_Converter {
     }
     static compile_class_subroutine_dec() {
         this.appendToXML(`<subroutineDec>`);
-        Tokens_To_Tree_Converter.consume_constructor_or_function_or_method();
-        Tokens_To_Tree_Converter.compile_subroutine_return_type();
-        Tokens_To_Tree_Converter.compile_subroutine_name();
-        Tokens_To_Tree_Converter.consume('(');
-        Tokens_To_Tree_Converter.compile_parameter_list();
-        Tokens_To_Tree_Converter.consume(')');
-        Tokens_To_Tree_Converter.compile_subroutine_body();
+        Tokens_To_VM_Code_Converter.consume_constructor_or_function_or_method();
+        Tokens_To_VM_Code_Converter.compile_subroutine_return_type();
+        Tokens_To_VM_Code_Converter.compile_subroutine_name();
+        Tokens_To_VM_Code_Converter.consume('(');
+        Tokens_To_VM_Code_Converter.compile_parameter_list();
+        Tokens_To_VM_Code_Converter.consume(')');
+        Tokens_To_VM_Code_Converter.compile_subroutine_body();
 
         this.appendToXML(`</subroutineDec>`);
     }
@@ -142,28 +142,28 @@ class Tokens_To_Tree_Converter {
         this.appendToXML(`</subroutineBody>`);
     }
     static compile_statements() {
-        Tokens_To_Tree_Converter.appendToXML(`<statements>`);
+        Tokens_To_VM_Code_Converter.appendToXML(`<statements>`);
         const possibleStatements = ["let", "if", "while", "do", "return"];
         let isAStatement;
         let statements_left_to_process;
         function prepare_for_next_iteration() {
-            isAStatement = Boolean(possibleStatements.includes(Tokens_To_Tree_Converter.tokenizer.tokenValue()));
+            isAStatement = Boolean(possibleStatements.includes(Tokens_To_VM_Code_Converter.tokenizer.tokenValue()));
             statements_left_to_process = Boolean(isAStatement);
         }
         prepare_for_next_iteration();
         while (statements_left_to_process) {
-            Tokens_To_Tree_Converter.compile_statement();
+            Tokens_To_VM_Code_Converter.compile_statement();
             prepare_for_next_iteration();
         }
         this.appendToXML(`</statements>`);
 
     }
     static compile_statement() {
-        const statement_type = Tokens_To_Tree_Converter.tokenizer.tokenValue();
-        const function_name_of_statement_compiler = `compile_${statement_type}_statement` as keyof typeof Tokens_To_Tree_Converter;
+        const statement_type = Tokens_To_VM_Code_Converter.tokenizer.tokenValue();
+        const function_name_of_statement_compiler = `compile_${statement_type}_statement` as keyof typeof Tokens_To_VM_Code_Converter;
         // call the function based on dynamic name
         this.appendToXML(`<${statement_type}Statement>`);
-        (Tokens_To_Tree_Converter[function_name_of_statement_compiler] as Function)();
+        (Tokens_To_VM_Code_Converter[function_name_of_statement_compiler] as Function)();
         this.appendToXML(`</${statement_type}Statement>`);
     }
     static compile_let_statement() {
@@ -178,12 +178,12 @@ class Tokens_To_Tree_Converter {
 
     }
     static compile_optional_array_access_notation() {
-        const squareBracketsNotationPresent = Boolean(Tokens_To_Tree_Converter.tokenizer.tokenValue() === '[');
+        const squareBracketsNotationPresent = Boolean(Tokens_To_VM_Code_Converter.tokenizer.tokenValue() === '[');
 
         if (squareBracketsNotationPresent) {
-            Tokens_To_Tree_Converter.consume('[');
-            Tokens_To_Tree_Converter.compile_expression();
-            Tokens_To_Tree_Converter.consume(']');
+            Tokens_To_VM_Code_Converter.consume('[');
+            Tokens_To_VM_Code_Converter.compile_expression();
+            Tokens_To_VM_Code_Converter.consume(']');
         }
     }
     static compile_if_statement() {
@@ -251,12 +251,12 @@ class Tokens_To_Tree_Converter {
         console.log(operators);
 
 
-        let anyMoreLeft = Boolean(operators.includes(Tokens_To_Tree_Converter.tokenizer.tokenValue()));
+        let anyMoreLeft = Boolean(operators.includes(Tokens_To_VM_Code_Converter.tokenizer.tokenValue()));
         while (anyMoreLeft) {
-            Tokens_To_Tree_Converter.consume_operator();
-            Tokens_To_Tree_Converter.compile_term();
+            Tokens_To_VM_Code_Converter.consume_operator();
+            Tokens_To_VM_Code_Converter.compile_term();
 
-            anyMoreLeft = Boolean(operators.includes(Tokens_To_Tree_Converter.tokenizer.tokenValue()));
+            anyMoreLeft = Boolean(operators.includes(Tokens_To_VM_Code_Converter.tokenizer.tokenValue()));
         }
     }
     static consume_operator() {
@@ -366,28 +366,28 @@ class Tokens_To_Tree_Converter {
     }
 
     static term_int_const() {
-        Tokens_To_Tree_Converter.compile_token_type_and_value();
+        Tokens_To_VM_Code_Converter.compile_token_type_and_value();
     }
     static term_str_const() {
 
-        Tokens_To_Tree_Converter.compile_token_type_and_value();
+        Tokens_To_VM_Code_Converter.compile_token_type_and_value();
     }
     static term_keyword_const() {
 
-        Tokens_To_Tree_Converter.compile_token_type_and_value();
+        Tokens_To_VM_Code_Converter.compile_token_type_and_value();
 
 
     }
 
     static term_var_name() {
-        Tokens_To_Tree_Converter.compile_var_name();
+        Tokens_To_VM_Code_Converter.compile_var_name();
     }
     static term_var_name_array_access() {
 
-        Tokens_To_Tree_Converter.compile_identifier();
-        Tokens_To_Tree_Converter.consume('[');
-        Tokens_To_Tree_Converter.compile_expression();
-        Tokens_To_Tree_Converter.consume(']');
+        Tokens_To_VM_Code_Converter.compile_identifier();
+        Tokens_To_VM_Code_Converter.consume('[');
+        Tokens_To_VM_Code_Converter.compile_expression();
+        Tokens_To_VM_Code_Converter.consume(']');
     }
     static term_subroutine_call() {
         const normalSubroutineCall = Boolean(this.tokenizer.nextTokenValue() === '(');
@@ -413,22 +413,22 @@ class Tokens_To_Tree_Converter {
         this.compile_identifier();
     }
     static term_obj_method_or_static_call() {
-        const nextTokenValue = Tokens_To_Tree_Converter.tokenizer.nextTokenValue();
+        const nextTokenValue = Tokens_To_VM_Code_Converter.tokenizer.nextTokenValue();
         const is_obj_method_or_static_func_call = Boolean(nextTokenValue === '.');
         if (!is_obj_method_or_static_func_call) {
             return false;
         }
 
-        Tokens_To_Tree_Converter.compile_identifier(); // class or obj var name
-        Tokens_To_Tree_Converter.consume('.');
-        Tokens_To_Tree_Converter.compile_identifier(); // method or static func name
-        Tokens_To_Tree_Converter.consume('(');
-        Tokens_To_Tree_Converter.compile_expression_list();
-        Tokens_To_Tree_Converter.consume(')');
+        Tokens_To_VM_Code_Converter.compile_identifier(); // class or obj var name
+        Tokens_To_VM_Code_Converter.consume('.');
+        Tokens_To_VM_Code_Converter.compile_identifier(); // method or static func name
+        Tokens_To_VM_Code_Converter.consume('(');
+        Tokens_To_VM_Code_Converter.compile_expression_list();
+        Tokens_To_VM_Code_Converter.consume(')');
 
     }
     static term_unary_op_term() {
-        Tokens_To_Tree_Converter.consume_unary_op();
+        Tokens_To_VM_Code_Converter.consume_unary_op();
         this.compile_term();
     }
     static consume_unary_op() {
@@ -437,17 +437,17 @@ class Tokens_To_Tree_Converter {
     static compile_expression_list() {
         this.appendToXML(`<expressionList>`);
         const endOfExpressionListMarker = ')';
-        let moreThanZeroExpressions = Boolean(Tokens_To_Tree_Converter.tokenizer.tokenValue() !== endOfExpressionListMarker);
+        let moreThanZeroExpressions = Boolean(Tokens_To_VM_Code_Converter.tokenizer.tokenValue() !== endOfExpressionListMarker);
         if (!moreThanZeroExpressions) {
             this.appendToXML(`</expressionList>`);
             return;
         }
-        Tokens_To_Tree_Converter.compile_expression();
-        let anyMoreExpressionsLeftToProcess = Boolean(Tokens_To_Tree_Converter.tokenizer.tokenValue() === ',');
+        Tokens_To_VM_Code_Converter.compile_expression();
+        let anyMoreExpressionsLeftToProcess = Boolean(Tokens_To_VM_Code_Converter.tokenizer.tokenValue() === ',');
         while (anyMoreExpressionsLeftToProcess) {
             this.consume(',');
-            Tokens_To_Tree_Converter.compile_expression();
-            anyMoreExpressionsLeftToProcess = Boolean(Tokens_To_Tree_Converter.tokenizer.tokenValue() === ',');
+            Tokens_To_VM_Code_Converter.compile_expression();
+            anyMoreExpressionsLeftToProcess = Boolean(Tokens_To_VM_Code_Converter.tokenizer.tokenValue() === ',');
         }
         this.appendToXML(`</expressionList>`);
     }
@@ -456,25 +456,25 @@ class Tokens_To_Tree_Converter {
         this.consume(this.tokenizer.tokenValue());
     }
     static next_token_xml() {
-        return `<${Tokens_To_Tree_Converter.tokenizer.tokenType()}> ${Tokens_To_Tree_Converter.tokenizer.tokenValue()} </${Tokens_To_Tree_Converter.tokenizer.tokenType()}>`;
+        return `<${Tokens_To_VM_Code_Converter.tokenizer.tokenType()}> ${Tokens_To_VM_Code_Converter.tokenizer.tokenValue()} </${Tokens_To_VM_Code_Converter.tokenizer.tokenType()}>`;
     }
     static consume_field_or_static_keyword() {
         this.consume(this.tokenizer.tokenValue());
     }
     static compile_token_type_and_value() {
-        const varTypeXML = `<${Tokens_To_Tree_Converter.tokenizer.tokenType()}> ${Tokens_To_Tree_Converter.tokenizer.tokenValue()} </${Tokens_To_Tree_Converter.tokenizer.tokenType()}>`;
+        const varTypeXML = `<${Tokens_To_VM_Code_Converter.tokenizer.tokenType()}> ${Tokens_To_VM_Code_Converter.tokenizer.tokenValue()} </${Tokens_To_VM_Code_Converter.tokenizer.tokenType()}>`;
         this.appendToXML(varTypeXML);
-        Tokens_To_Tree_Converter.tokenizer.advance();
+        Tokens_To_VM_Code_Converter.tokenizer.advance();
     }
     static compile_zero_or_more_var_decs() {
         let varDecsLeftToProcess;
 
-        varDecsLeftToProcess = Boolean(Tokens_To_Tree_Converter.tokenizer.tokenValue() === 'var');
+        varDecsLeftToProcess = Boolean(Tokens_To_VM_Code_Converter.tokenizer.tokenValue() === 'var');
 
         while (varDecsLeftToProcess) {
-            Tokens_To_Tree_Converter.compile_var_dec();
+            Tokens_To_VM_Code_Converter.compile_var_dec();
 
-            varDecsLeftToProcess = Boolean(Tokens_To_Tree_Converter.tokenizer.tokenValue() === 'var');
+            varDecsLeftToProcess = Boolean(Tokens_To_VM_Code_Converter.tokenizer.tokenValue() === 'var');
 
         }
 
@@ -501,9 +501,9 @@ class Tokens_To_Tree_Converter {
     static compile_class_var_dec() {
         this.appendToXML(`<classVarDec>`);
 
-        Tokens_To_Tree_Converter.consume_field_or_static_keyword();
-        Tokens_To_Tree_Converter.compile_var_type();
-        Tokens_To_Tree_Converter.compile_var_name();
+        Tokens_To_VM_Code_Converter.consume_field_or_static_keyword();
+        Tokens_To_VM_Code_Converter.compile_var_type();
+        Tokens_To_VM_Code_Converter.compile_var_name();
         this.compile_optional_comma_separated_additional_var_decs_of_same_type();
         this.consume(';');
 
@@ -523,21 +523,21 @@ class Tokens_To_Tree_Converter {
     }
 
     static consume(requiredValue: string) {
-        const tokenValue = Tokens_To_Tree_Converter.tokenizer.tokenValue();
-        const tokenType = Tokens_To_Tree_Converter.tokenizer.tokenType();
+        const tokenValue = Tokens_To_VM_Code_Converter.tokenizer.tokenValue();
+        const tokenType = Tokens_To_VM_Code_Converter.tokenizer.tokenType();
         if (!(tokenValue === requiredValue)) {
             throw new Error(`Expected the required token value ${requiredValue}, but the actual token has a  different value (${tokenValue})`);
         }
         this.appendToXML(`<${tokenType}> ${tokenValue} </${tokenType}>`);
-        Tokens_To_Tree_Converter.tokenizer.advance();
+        Tokens_To_VM_Code_Converter.tokenizer.advance();
 
     }
 
     static compile_identifier() {
 
-        this.appendToXML(`<identifier> ${Tokens_To_Tree_Converter.tokenizer.identifierValue()} </identifier>`);
+        this.appendToXML(`<identifier> ${Tokens_To_VM_Code_Converter.tokenizer.identifierValue()} </identifier>`);
 
-        Tokens_To_Tree_Converter.tokenizer.advance();
+        Tokens_To_VM_Code_Converter.tokenizer.advance();
 
     }
 
@@ -545,7 +545,7 @@ class Tokens_To_Tree_Converter {
         this.consume(this.tokenizer.tokenValue());
     }
     static compile_var_name() {
-        Tokens_To_Tree_Converter.compile_identifier();
+        Tokens_To_VM_Code_Converter.compile_identifier();
     }
 
 }
