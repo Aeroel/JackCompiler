@@ -1,3 +1,9 @@
 {
-    "type": "module"
+    "type": "module",
+    "dependencies": {
+        "@types/express": "^5.0.1"
+    },
+    "imports": {
+        "#root/*": "./Compiled_From_Typescript_Into_Javascript/*"
+    }
 }

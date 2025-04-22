@@ -1,2 +1,7 @@
-/.vscode
-/node_modules
+node_modules/
+.vs/
+pnpm-lock.yaml
+package-lock.json
+Compiled_From_Typescript_Into_Javascript/*
+!Compiled_From_Typescript_Into_Javascript/.gitkeep
+tsconfig.tsbuildinfo

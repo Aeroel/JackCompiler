@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "incremental": true,
+    "rootDir": "./Code_Written_In_Typescript",
+    "outDir": "./Compiled_From_Typescript_Into_Javascript",
+    "strict": true,
+    "moduleResolution": "nodenext",
+    "verbatimModuleSyntax": true,
+    "baseUrl": "./Code_Written_In_Typescript",
+    "module": "nodenext",
+    "target": "esnext",
+    "lib": [
+      "ESNext"
+    ],
+  "paths": {
+    "#root/*": ["*"],
+  }
+  },
+  "include": ["./"],
+  "exclude": ["node_modules", "Compiled_From_Typescript_Into_Javascript"]
+}
