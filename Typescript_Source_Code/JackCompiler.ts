@@ -13,7 +13,7 @@ const codeWithoutComments = fs.readFileSync(pathToFileWithoutComments, "utf8");
 const tokens = Code_To_Tokens_Converter.convert_code_to_tokens(codeWithoutComments);
 Tokens_Saver.save_tokens_in_the_same_directory_as_path(tokens, pathToFileWithoutComments);
 
-Tokens_To_VM_Code_Converter.Parse_Tokens_Into_VM_Code(tokens);
+Tokens_To_VM_Code_Converter.Convert_Tokens_Into_VM_Code(tokens);
 Tokens_To_VM_Code_Converter.Save_VM_Code_In_Same_Dir_As_Path(provided_path_from_command_line_argument);
 
 

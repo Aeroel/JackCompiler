@@ -11,15 +11,15 @@ class Tokens_To_VM_Code_Converter {
     static xml = '';
     static tokenizer: Convenient_Way_To_Advance_Through_Tokens;
     static Save_VM_Code_In_Same_Dir_As_Path(filePath: string) {
-        const xmlFilePath = filePath + ".tree.xml";
-        console.log(`[Tokens To Tree XML] Saving XML into new file at ${xmlFilePath}`);
-        const xml = this.xml//formatXml(this.xml, { collapseContent: true, indentation: '  ', throwOnFailure: false });
-        fs.writeFileSync(xmlFilePath, xml);
+        const vmFilePath = filePath + ".vm";
+        console.log(`[Tokens To VM Code] Saving VM code into new file at ${vmFilePath}`);
+        const xml = this.xml;
+        fs.writeFileSync(vmFilePath, xml);
     }
     static appendToXML(str: string) {
         Tokens_To_VM_Code_Converter.xml += `${str}` + Helper_Functions.getNewline();
     }
-    static Parse_Tokens_Into_VM_Code(tokens: Token[]) {
+    static Convert_Tokens_Into_VM_Code(tokens: Token[]) {
         console.log(`[Tokens To VM Code ] Converting tokens array of length ${tokens.length} into VM Code `);
 
         Tokens_To_VM_Code_Converter.tokens = tokens;
