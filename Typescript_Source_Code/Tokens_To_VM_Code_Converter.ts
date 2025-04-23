@@ -5,18 +5,19 @@ import { Helper_Functions } from './Helper_Functions.js';
 import { Tokens_Saver } from './Tokens_Saver.js';
 import type { Jack_Symbol, Token } from '#root/Type_Definitions.js';
 import { Symbol_Table } from './Symbol_Table.js';
+import { VM_Commands_Writer } from './VM_Commands_Writer.js';
 
 class Tokens_To_VM_Code_Converter {
     static tokens: Token[] = [];
     static className: string = '';
     static symbol_table: Symbol_Table;
-    static xml = '';
+    static vm_writer: VM_Commands_Writer;
     static tokenizer: Convenient_Way_To_Advance_Through_Tokens;
     static Save_VM_Code_In_Same_Dir_As_Path(filePath: string) {
         const vmFilePath = filePath + ".vm";
         console.log(`[Tokens To VM Code] Saving VM code into new file at ${vmFilePath}`);
-        const xml = this.xml;
-        fs.writeFileSync(vmFilePath, xml);
+        const vmCode = this.vm_writer.getCode();
+        fs.writeFileSync(vmFilePath, vmCode);
     }
     static appendToXML(str: string) {
         // does nothing, was used in JackAnalyzer, to be removed later
@@ -24,11 +25,14 @@ class Tokens_To_VM_Code_Converter {
     static Convert_Tokens_Into_VM_Code(tokens: Token[]) {
         console.log(`[Tokens To VM Code ] Converting tokens array of length ${tokens.length} into VM Code `);
 
-        Tokens_To_VM_Code_Converter.tokens = tokens;
-        Tokens_To_VM_Code_Converter.tokenizer = new Convenient_Way_To_Advance_Through_Tokens(tokens);
-        Tokens_To_VM_Code_Converter.symbol_table = new Symbol_Table();
+        this.tokens = tokens;
+        this.tokenizer = new Convenient_Way_To_Advance_Through_Tokens(tokens);
+        this.symbol_table = new Symbol_Table();
+        this.vm_writer = new VM_Commands_Writer();
 
-        Tokens_To_VM_Code_Converter.compile_class();
+        this.compile_class();
+
+        const vm_code = this.vm_writer.getCode();
     }
     static compile_class_name() {
         const className = this.compile_identifier();
@@ -92,8 +96,19 @@ class Tokens_To_VM_Code_Converter {
         Tokens_To_VM_Code_Converter.compile_subroutine_return_type();
         const subroutineName = Tokens_To_VM_Code_Converter.compile_subroutine_name();
         Tokens_To_VM_Code_Converter.consume('(');
-        const paramsCount = Tokens_To_VM_Code_Converter.compile_parameter_list();
+        let paramsCount = Tokens_To_VM_Code_Converter.compile_parameter_list();
         Tokens_To_VM_Code_Converter.consume(')');
+
+
+        const needsThis = !(subroutineKind === 'function');
+        if (needsThis) {
+            paramsCount++; // to account for "this" (0th available param) in methods and constructors. functions are like static functions in JS, so they don't need the extra param as they have no "this".
+        }
+
+
+        this.vm_writer.writeFunction(subroutineName, paramsCount);
+
+
         Tokens_To_VM_Code_Converter.compile_subroutine_body();
     }
     static compile_subroutine_name() {
