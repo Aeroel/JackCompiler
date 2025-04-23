@@ -32,7 +32,6 @@ class Tokens_To_VM_Code_Converter {
     }
     static compile_class() {
 
-        this.appendToXML(`<class>`);
 
         Tokens_To_VM_Code_Converter.consume("class");
         Tokens_To_VM_Code_Converter.compile_class_name(); // class name
@@ -40,8 +39,6 @@ class Tokens_To_VM_Code_Converter {
         Tokens_To_VM_Code_Converter.compile_zero_or_more_class_var_decs();
         Tokens_To_VM_Code_Converter.compile_zero_or_more_class_subroutine_decs();
         Tokens_To_VM_Code_Converter.consume("}");
-
-        this.appendToXML(`</class>`);
 
 
 
