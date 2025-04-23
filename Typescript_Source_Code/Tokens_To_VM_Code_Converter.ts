@@ -3,11 +3,13 @@ import fs from 'node:fs';
 import { Convenient_Way_To_Advance_Through_Tokens } from './Convenient_Way_To_Advance_Through_Tokens.js';
 import { Helper_Functions } from './Helper_Functions.js';
 import { Tokens_Saver } from './Tokens_Saver.js';
-import type { Token } from '#root/Type_Definitions.js';
+import type { Jack_Symbol, Token } from '#root/Type_Definitions.js';
+import { Symbol_Table } from './Symbol_Table.js';
 
 class Tokens_To_VM_Code_Converter {
-
     static tokens: Token[] = [];
+    static className: string = '';
+    static symbol_table: Symbol_Table;
     static xml = '';
     static tokenizer: Convenient_Way_To_Advance_Through_Tokens;
     static Save_VM_Code_In_Same_Dir_As_Path(filePath: string) {
@@ -17,18 +19,20 @@ class Tokens_To_VM_Code_Converter {
         fs.writeFileSync(vmFilePath, xml);
     }
     static appendToXML(str: string) {
-        Tokens_To_VM_Code_Converter.xml += `${str}` + Helper_Functions.getNewline();
+        // does nothing, was used in JackAnalyzer, to be removed later
     }
     static Convert_Tokens_Into_VM_Code(tokens: Token[]) {
         console.log(`[Tokens To VM Code ] Converting tokens array of length ${tokens.length} into VM Code `);
 
         Tokens_To_VM_Code_Converter.tokens = tokens;
         Tokens_To_VM_Code_Converter.tokenizer = new Convenient_Way_To_Advance_Through_Tokens(tokens);
+        Tokens_To_VM_Code_Converter.symbol_table = new Symbol_Table();
 
         Tokens_To_VM_Code_Converter.compile_class();
     }
     static compile_class_name() {
-        this.compile_identifier();
+        const className = this.compile_identifier();
+        Tokens_To_VM_Code_Converter.className = className;
     }
     static compile_class() {
 
@@ -81,32 +85,36 @@ class Tokens_To_VM_Code_Converter {
 
     }
     static compile_class_subroutine_dec() {
-        this.appendToXML(`<subroutineDec>`);
-        Tokens_To_VM_Code_Converter.consume_constructor_or_function_or_method();
+
+        this.symbol_table.newSubroutine();
+
+        const subroutineKind = Tokens_To_VM_Code_Converter.consume_constructor_or_function_or_method();
         Tokens_To_VM_Code_Converter.compile_subroutine_return_type();
-        Tokens_To_VM_Code_Converter.compile_subroutine_name();
+        const subroutineName = Tokens_To_VM_Code_Converter.compile_subroutine_name();
         Tokens_To_VM_Code_Converter.consume('(');
-        Tokens_To_VM_Code_Converter.compile_parameter_list();
+        const paramsCount = Tokens_To_VM_Code_Converter.compile_parameter_list();
         Tokens_To_VM_Code_Converter.consume(')');
         Tokens_To_VM_Code_Converter.compile_subroutine_body();
-
-        this.appendToXML(`</subroutineDec>`);
     }
     static compile_subroutine_name() {
-        this.compile_identifier();
+        return this.compile_identifier();
     }
     static compile_parameter_list() {
-        this.appendToXML(`<parameterList>`);
-        this.parameters_are_optional();
-        this.appendToXML(`</parameterList>`);
+        const paramsCount = this.parameters_are_optional();
+        return paramsCount;
     }
     static parameters_are_optional() {
+        let paramsCount = 0;
         let paramIsEmpty = Boolean(this.tokenizer.tokenValue() === ')');
         if (paramIsEmpty) {
-            return;
+            return paramsCount;
         }
+        paramsCount++;
         this.compile_param();
-        this.then_zero_or_more_comma_separated_params();
+        const additionalParamsCount = this.then_zero_or_more_comma_separated_params();
+        paramsCount = paramsCount + additionalParamsCount;
+        return paramsCount;
+
     }
     static compile_param() {
         // param type
@@ -121,14 +129,20 @@ class Tokens_To_VM_Code_Converter {
         this.compile_identifier();
     }
     static then_zero_or_more_comma_separated_params() {
+        let params_count = 0;
+
         let more_params = Boolean(this.tokenizer.tokenValue() === ',');
         while (more_params) {
+
             this.consume(',');
             this.compile_param_type();
             this.compile_param_name();
 
             more_params = Boolean(this.tokenizer.tokenValue() === ',');
+
+            params_count++;
         }
+        return params_count;
     }
     static compile_subroutine_body() {
         this.appendToXML(`<subroutineBody>`);
@@ -450,13 +464,21 @@ class Tokens_To_VM_Code_Converter {
     }
 
     static consume_constructor_or_function_or_method() {
-        this.consume(this.tokenizer.tokenValue());
+        const kind = this.tokenizer.tokenValue();
+
+        this.consume(kind);
+
+        return kind;
     }
     static next_token_xml() {
         return `<${Tokens_To_VM_Code_Converter.tokenizer.tokenType()}> ${Tokens_To_VM_Code_Converter.tokenizer.tokenValue()} </${Tokens_To_VM_Code_Converter.tokenizer.tokenType()}>`;
     }
     static consume_field_or_static_keyword() {
-        this.consume(this.tokenizer.tokenValue());
+        const keyword = this.tokenizer.tokenValue();
+
+        this.consume(keyword);
+
+        return keyword;
     }
     static compile_token_type_and_value() {
         const varTypeXML = `<${Tokens_To_VM_Code_Converter.tokenizer.tokenType()}> ${Tokens_To_VM_Code_Converter.tokenizer.tokenValue()} </${Tokens_To_VM_Code_Converter.tokenizer.tokenType()}>`;
@@ -496,27 +518,30 @@ class Tokens_To_VM_Code_Converter {
         }
     }
     static compile_class_var_dec() {
-        this.appendToXML(`<classVarDec>`);
 
-        Tokens_To_VM_Code_Converter.consume_field_or_static_keyword();
-        Tokens_To_VM_Code_Converter.compile_var_type();
-        Tokens_To_VM_Code_Converter.compile_var_name();
+        const kind = Tokens_To_VM_Code_Converter.consume_field_or_static_keyword() as Jack_Symbol["kind"];
+        const type = Tokens_To_VM_Code_Converter.compile_var_type();
+        const name = Tokens_To_VM_Code_Converter.compile_var_name();
+        this.symbol_table.add(name, kind, type);
+
         this.compile_optional_comma_separated_additional_var_decs_of_same_type();
         this.consume(';');
-
-        this.appendToXML('</classVarDec>');
     }
     static compile_optional_comma_separated_additional_var_decs_of_same_type() {
         let moreRemaining = Boolean(this.tokenizer.tokenValue() === ',');
         while (moreRemaining) {
             this.consume(',');
-            this.compile_var_name();
+            const varName = this.compile_var_name();
+            this.symbol_table.add(varName);
 
             moreRemaining = Boolean(this.tokenizer.tokenValue() === ',');
         }
     }
     static compile_var_type() {
         this.compile_token_type_and_value();
+
+        const type = this.tokenizer.tokenValue();
+        return type;
     }
 
     static consume(requiredValue: string) {
@@ -532,9 +557,11 @@ class Tokens_To_VM_Code_Converter {
 
     static compile_identifier() {
 
-        this.appendToXML(`<identifier> ${Tokens_To_VM_Code_Converter.tokenizer.identifierValue()} </identifier>`);
+        const identifier = Tokens_To_VM_Code_Converter.tokenizer.identifierValue();
 
         Tokens_To_VM_Code_Converter.tokenizer.advance();
+
+        return identifier;
 
     }
 
@@ -542,7 +569,8 @@ class Tokens_To_VM_Code_Converter {
         this.consume(this.tokenizer.tokenValue());
     }
     static compile_var_name() {
-        Tokens_To_VM_Code_Converter.compile_identifier();
+        const var_name = Tokens_To_VM_Code_Converter.compile_identifier();
+        return var_name;
     }
 
 }
