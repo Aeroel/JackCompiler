@@ -187,11 +187,24 @@ class Tokens_To_VM_Code_Converter {
     }
     static compile_statement() {
         const statement_type = Tokens_To_VM_Code_Converter.tokenizer.tokenValue();
-        const function_name_of_statement_compiler = `compile_${statement_type}_statement` as keyof typeof Tokens_To_VM_Code_Converter;
-        // call the function based on dynamic name
+        switch (statement_type) {
+            case "let":
+                this.compile_let_statement();
+                break;
+            case "if":
+                this.compile_if_statement();
+                break;
+            case "while":
+                this.compile_while_statement();
+                break;
+            case "do":
+                this.compile_do_statement();
+                break;
+            case "return":
+                this.compile_return_statement();
+                break;
+        }
 
-        (Tokens_To_VM_Code_Converter[function_name_of_statement_compiler] as Function)();
-        
     }
     static compile_let_statement() {
 
