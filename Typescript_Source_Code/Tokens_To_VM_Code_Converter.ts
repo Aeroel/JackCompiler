@@ -173,7 +173,8 @@ class Tokens_To_VM_Code_Converter {
         let isAStatement;
         let statements_left_to_process;
         function prepare_for_next_iteration() {
-            isAStatement = Boolean(possibleStatements.includes(Tokens_To_VM_Code_Converter.tokenizer.tokenValue()));
+            const statement_type = Tokens_To_VM_Code_Converter.tokenizer.tokenValue();
+            isAStatement = Boolean(possibleStatements.includes(statement_type));
             statements_left_to_process = Boolean(isAStatement);
         }
         prepare_for_next_iteration();
