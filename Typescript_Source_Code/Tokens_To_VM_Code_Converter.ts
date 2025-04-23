@@ -291,12 +291,12 @@ class Tokens_To_VM_Code_Converter {
         console.log(operators);
 
 
-        let anyMoreLeft = Boolean(operators.includes(Tokens_To_VM_Code_Converter.tokenizer.tokenValue()));
+        let anyMoreLeft = Boolean(operators.includes(this.tokenizer.tokenValue()));
         while (anyMoreLeft) {
-            Tokens_To_VM_Code_Converter.consume_operator();
-            Tokens_To_VM_Code_Converter.compile_term();
+            this.consume_operator();
+            this.compile_term();
 
-            anyMoreLeft = Boolean(operators.includes(Tokens_To_VM_Code_Converter.tokenizer.tokenValue()));
+            anyMoreLeft = Boolean(operators.includes(this.tokenizer.tokenValue()));
         }
     }
     static consume_operator() {
