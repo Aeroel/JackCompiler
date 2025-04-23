@@ -189,9 +189,9 @@ class Tokens_To_VM_Code_Converter {
         const statement_type = Tokens_To_VM_Code_Converter.tokenizer.tokenValue();
         const function_name_of_statement_compiler = `compile_${statement_type}_statement` as keyof typeof Tokens_To_VM_Code_Converter;
         // call the function based on dynamic name
-        this.appendToXML(`<${statement_type}Statement>`);
+
         (Tokens_To_VM_Code_Converter[function_name_of_statement_compiler] as Function)();
-        this.appendToXML(`</${statement_type}Statement>`);
+        
     }
     static compile_let_statement() {
 
