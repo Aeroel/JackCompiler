@@ -1,7 +1,7 @@
 export { Tokens_To_VM_Code_Converter };
+
 import fs from 'node:fs';
 import { Convenient_Way_To_Advance_Through_Tokens } from './Convenient_Way_To_Advance_Through_Tokens.js';
-import { Helper_Functions } from './Helper_Functions.js';
 import { Tokens_Saver } from './Tokens_Saver.js';
 import type { Jack_Symbol, Token } from '#root/Type_Definitions.js';
 import { Symbol_Table } from './Symbol_Table.js';
@@ -102,7 +102,7 @@ class Tokens_To_VM_Code_Converter {
 
         const needsThis = !(subroutineKind === 'function');
         if (needsThis) {
-            paramsCount++; // to account for "this" (0th available param) in methods and constructors. functions are like static functions in JS, so they don't need the extra param as they have no "this".
+            paramsCount++; // to account for "this" (0th available param) in methods and constructors. functions in Jack are like static JS functions, so they don't need the extra param as they have no "this".
         }
 
 
@@ -160,15 +160,12 @@ class Tokens_To_VM_Code_Converter {
         return params_count;
     }
     static compile_subroutine_body() {
-        this.appendToXML(`<subroutineBody>`);
         this.consume('{');
         this.compile_zero_or_more_var_decs();
         this.compile_statements();
         this.consume('}');
-        this.appendToXML(`</subroutineBody>`);
     }
     static compile_statements() {
-        Tokens_To_VM_Code_Converter.appendToXML(`<statements>`);
         const possibleStatements = ["let", "if", "while", "do", "return"];
         let isAStatement;
         let statements_left_to_process;
@@ -182,7 +179,6 @@ class Tokens_To_VM_Code_Converter {
             Tokens_To_VM_Code_Converter.compile_statement();
             prepare_for_next_iteration();
         }
-        this.appendToXML(`</statements>`);
 
     }
     static compile_statement() {
@@ -209,7 +205,7 @@ class Tokens_To_VM_Code_Converter {
     static compile_let_statement() {
 
         this.consume('let');
-        this.compile_var_name();
+        const varName = this.compile_var_name();
         this.compile_optional_array_access_notation();
 
         this.consume('=');
@@ -276,10 +272,8 @@ class Tokens_To_VM_Code_Converter {
     }
 
     static compile_expression() {
-        this.appendToXML(`<expression>`);
         this.compile_term();
         this.compile_additional_zero_or_more_occurrences_of_op_term();
-        this.appendToXML(`</expression>`);
     }
     static compile_additional_zero_or_more_occurrences_of_op_term() {
         let operators = [
@@ -304,13 +298,11 @@ class Tokens_To_VM_Code_Converter {
     }
 
     static compile_term() {
-        this.appendToXML(`<term>`);
 
         const term_type = this.determine_term_type();
 
         this.call_term_type_handler(term_type);
 
-        this.appendToXML(`</term>`);
 
 
     }
@@ -406,7 +398,9 @@ class Tokens_To_VM_Code_Converter {
     }
 
     static term_int_const() {
-        Tokens_To_VM_Code_Converter.compile_token_type_and_value();
+        const intToken = Tokens_To_VM_Code_Converter.compile_token_type_and_value();
+        const int = Number(intToken.value);
+        this.vm_writer.writePush("const", int);
     }
     static term_str_const() {
 
@@ -510,9 +504,14 @@ class Tokens_To_VM_Code_Converter {
         return keyword;
     }
     static compile_token_type_and_value() {
+        const token = {
+            type: Tokens_To_VM_Code_Converter.tokenizer.tokenType(),
+            value: Tokens_To_VM_Code_Converter.tokenizer.tokenValue(),    
+        };
         const varTypeXML = `<${Tokens_To_VM_Code_Converter.tokenizer.tokenType()}> ${Tokens_To_VM_Code_Converter.tokenizer.tokenValue()} </${Tokens_To_VM_Code_Converter.tokenizer.tokenType()}>`;
         this.appendToXML(varTypeXML);
         Tokens_To_VM_Code_Converter.tokenizer.advance();
+        return token;
     }
     static compile_zero_or_more_var_decs() {
         let varDecsLeftToProcess;
@@ -529,19 +528,19 @@ class Tokens_To_VM_Code_Converter {
 
     }
     static compile_var_dec() {
-        this.appendToXML('<varDec>');
         this.consume('var');
-        this.compile_var_type();
-        this.compile_var_name();
+        const type = this.compile_var_type();
+        const varName = this.compile_var_name();
+        this.symbol_table.add(varName, 'var', type);
         this.then_zero_or_more_comma_separated_var_decs();
         this.consume(';');
-        this.appendToXML('</varDec>');
     }
     static then_zero_or_more_comma_separated_var_decs() {
         let moreCommaSeparatedVarDecs = Boolean(this.tokenizer.tokenValue() === ',');
         while (moreCommaSeparatedVarDecs) {
-            this.compile_var_type();
-            this.compile_var_name();
+            this.consume(',');
+            const varName = this.compile_var_name();
+            this.symbol_table.add(varName);
             moreCommaSeparatedVarDecs = Boolean(this.tokenizer.tokenValue() === ',');
 
         }
@@ -567,9 +566,10 @@ class Tokens_To_VM_Code_Converter {
         }
     }
     static compile_var_type() {
+        const type = this.tokenizer.tokenValue();
+
         this.compile_token_type_and_value();
 
-        const type = this.tokenizer.tokenValue();
         return type;
     }
 
