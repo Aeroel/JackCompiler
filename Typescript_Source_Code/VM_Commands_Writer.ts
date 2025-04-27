@@ -1,20 +1,36 @@
+import { assert } from "node:console";
 import { Helper_Functions } from "./Helper_Functions.js";
 import type { Symbol_Table } from "./Symbol_Table.js";
 import { Tokens_To_VM_Code_Converter } from "./Tokens_To_VM_Code_Converter.js";
-import type { Segment } from "./Type_Definitions.js";
+import type { Jack_Symbol, Segment } from "./Type_Definitions.js";
 
 export { VM_Commands_Writer }
 class VM_Commands_Writer {
     code = '';
+    validSegments: string[] = ["constant" , "argument" , "local" , "static" , "this" , "that" , "pointer" , "temp"];
     constructor() {
 
     }
     writePush(segment: Segment, index: Symbol_Table["table"][number]["index"]) {
-        const map: Record<string, string> = {
-            "const": "constant"
-        };
-        const segmentMapped = map[segment];
-        this.append(`push ${segmentMapped} ${index}`);
+        let segment_real = segment;
+        if((segment as Jack_Symbol["kind"]) === 'var') {
+            segment_real = 'local';
+        }
+        this.throwIfSegmentIsInvalid(segment_real);
+        this.append(`push ${segment_real} ${index}`);
+    }
+    writePop(segment: Segment, index: Symbol_Table["table"][number]["index"]) {
+        let segment_real = segment;
+        if((segment as Jack_Symbol["kind"]) === 'var') {
+            segment_real = 'local';
+        }
+        this.throwIfSegmentIsInvalid(segment_real);
+        this.append(`pop ${segment_real} ${index}`);
+    }
+    throwIfSegmentIsInvalid(segment: string) {
+        if(!(this.validSegments.includes(segment))) {
+            throw new Error("Invalid segment " + segment);
+        }
     }
     writeCall(name: string, passedParamCount: number) {
         const passedParamCount_str = String(passedParamCount);

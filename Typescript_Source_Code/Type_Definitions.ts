@@ -9,7 +9,7 @@ declare type Jack_Symbol = {
     index: number,
     name: string,
     type: string,
-    kind: "static" | "field" | "var" | "arg"
+    kind: "static" | "field" | "var" | "argument"
 }
 
-declare type Segment = "const" | "arg" | "local" | "static" | "this" | "that" | "pointer" | "temp";
+declare type Segment = "constant" | "argument" | "local" | "static" | "this" | "that" | "pointer" | "temp";

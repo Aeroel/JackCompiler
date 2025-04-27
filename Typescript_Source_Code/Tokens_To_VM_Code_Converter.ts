@@ -2,7 +2,7 @@ export { Tokens_To_VM_Code_Converter };
 import fs from 'node:fs';
 import { Convenient_Way_To_Advance_Through_Tokens } from './Convenient_Way_To_Advance_Through_Tokens.js';
 import { Tokens_Saver } from './Tokens_Saver.js';
-import type { Token } from '#root/Type_Definitions.js';
+import type { Segment, Token } from '#root/Type_Definitions.js';
 import { Symbol_Table } from './Symbol_Table.js';
 import { VM_Commands_Writer } from './VM_Commands_Writer.js';
 
@@ -17,6 +17,7 @@ class Tokens_To_VM_Code_Converter {
     static subName = 'none';
     static FunctionArgCount = 0;
     static passedParamCount = 0;
+    static localsCount = 0;
 
     static Save_VM_Code_In_Same_Dir_As_Path(filePath: string) {
         const vmFilePath = filePath + ".vm";
@@ -108,7 +109,6 @@ class Tokens_To_VM_Code_Converter {
 
         const subName = this.tokenizer.tokenValue();
         this.subName = subName;
-        this.vmWriter.writeFunction(`${subName}`, this.FunctionArgCount)
         Tokens_To_VM_Code_Converter.compile_subroutine_name();
         Tokens_To_VM_Code_Converter.consume('(');
         Tokens_To_VM_Code_Converter.compile_parameter_list();
@@ -161,6 +161,7 @@ class Tokens_To_VM_Code_Converter {
         this.appendToXML(`<subroutineBody>`);
         this.consume('{');
         this.compile_zero_or_more_var_decs();
+        this.vmWriter.writeFunction(`${this.subName}`, this.localsCount)
         this.compile_statements();
         this.consume('}');
         this.appendToXML(`</subroutineBody>`);
@@ -209,12 +210,19 @@ class Tokens_To_VM_Code_Converter {
     static compile_let_statement() {
 
         this.consume('let');
-        this.compile_var_name();
+        const varName = this.tokenizer.tokenValue();
+        this.compile_let_var_name();
         this.compile_optional_array_access_notation();
 
         this.consume('=');
         this.compile_expression();
         this.consume(';');
+
+        console.log("varName:"+varName);
+        const symbol = this.table.getSymbol(varName);
+  
+        
+        this.vmWriter.writePop(symbol.kind as Segment, symbol.index);
 
     }
     static compile_optional_array_access_notation() {
@@ -271,7 +279,7 @@ class Tokens_To_VM_Code_Converter {
         const returnStatementEndsNow = Boolean(this.tokenizer.tokenValue() === ';');
         const theOptionalReturnValueIsPresent = !returnStatementEndsNow;
         if (returnStatementEndsNow) {
-            this.vmWriter.writePush("const", 0);
+            this.vmWriter.writePush("constant", 0);
             return;
         }
         this.compile_expression();
@@ -411,10 +419,20 @@ class Tokens_To_VM_Code_Converter {
 
     static term_int_const() {
         const int = Number(this.tokenizer.tokenValue());
-        this.vmWriter.writePush("const", int);
+        this.vmWriter.writePush("constant", int);
         Tokens_To_VM_Code_Converter.compile_token_type_and_value();
     }
     static term_str_const() {
+        //console.log(this.tokenizer.tokenValue());
+        const str = this.tokenizer.tokenValue();
+        this.vmWriter.writePush("constant", str.length);
+        this.vmWriter.writeCall("String.new", 1);
+
+        str.split('').forEach(char => {
+            const numericRepresentation = char.charCodeAt(0);
+            this.vmWriter.writePush("constant", numericRepresentation);
+            this.vmWriter.writeCall("String.appendChar", 2);
+        })
 
         Tokens_To_VM_Code_Converter.compile_token_type_and_value();
     }
@@ -426,7 +444,7 @@ class Tokens_To_VM_Code_Converter {
     }
 
     static term_var_name() {
-        Tokens_To_VM_Code_Converter.compile_var_name();
+        Tokens_To_VM_Code_Converter.compile_term_var_name();
     }
     static term_var_name_array_access() {
 
@@ -540,7 +558,7 @@ class Tokens_To_VM_Code_Converter {
     }
     static compile_zero_or_more_var_decs() {
         let varDecsLeftToProcess;
-
+        this.localsCount = 0;
         varDecsLeftToProcess = Boolean(Tokens_To_VM_Code_Converter.tokenizer.tokenValue() === 'var');
 
         while (varDecsLeftToProcess) {
@@ -559,7 +577,8 @@ class Tokens_To_VM_Code_Converter {
         this.compile_var_type();
         const varName = this.tokenizer.tokenValue();
         this.compile_var_name();
-        this.table.add(varName, "arg", varType)
+        this.localsCount++;
+        this.table.add(varName, "var", varType)
         this.then_zero_or_more_comma_separated_var_decs();
         this.consume(';');
         this.appendToXML('</varDec>');
@@ -567,6 +586,7 @@ class Tokens_To_VM_Code_Converter {
     static then_zero_or_more_comma_separated_var_decs() {
         let moreCommaSeparatedVarDecs = Boolean(this.tokenizer.tokenValue() === ',');
         while (moreCommaSeparatedVarDecs) {
+            this.localsCount++;
             this.compile_var_type();
             const varName = this.tokenizer.tokenValue();
             this.table.add(varName);
@@ -624,6 +644,17 @@ class Tokens_To_VM_Code_Converter {
         this.consume(this.tokenizer.tokenValue());
     }
     static compile_var_name() {
+        Tokens_To_VM_Code_Converter.compile_identifier(); 
+    }
+    static compile_term_var_name() {
+        const varName = this.tokenizer.tokenValue();
+        console.log(`Hm: ${varName}`);
+        
+        Tokens_To_VM_Code_Converter.compile_identifier(); 
+        const symbol = this.table.getSymbol(varName);
+        this.vmWriter.writePush(symbol.kind as Segment,symbol.index);
+    }
+    static compile_let_var_name() {
         Tokens_To_VM_Code_Converter.compile_identifier();
     }
 
