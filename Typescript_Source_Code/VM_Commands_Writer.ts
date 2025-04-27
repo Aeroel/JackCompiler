@@ -10,22 +10,40 @@ class VM_Commands_Writer {
 
     }
     writePush(segment: Segment, index: Symbol_Table["table"][number]["index"]) {
-        this.append(`push ${segment} ${index}`);
+        const map: Record<string, string> = {
+            "const": "constant"
+        };
+        const segmentMapped = map[segment];
+        this.append(`push ${segmentMapped} ${index}`);
     }
-    writeCall(name: string) {
-        this.append(`call ${name}`);
+    writeCall(name: string, passedParamCount: number) {
+        const passedParamCount_str = String(passedParamCount);
+        this.append(`call ${name} ${passedParamCount_str}`);
+    }
+    writeReturn() {
+        this.append('return');
     }
     writeFunction(subroutineName: string, args: number) {
         const className =  Tokens_To_VM_Code_Converter.className;
 
         this.append(`function ${className}.${subroutineName} ${args}`);
     }
+    writeOp(op: string) {
+        const map: Record<string, string> = {
+            "*": "call Math.multiply 2",
+            "+": "add",
+        }
+        const mapped = map[op];
+        this.append(`${mapped}`);
+        
+    }
     getCode() {
         return this.code;
     }
     append(additionalCode: string) {
         console.log(additionalCode);
-        this.code = `${this.code}  ${this.newLine()} ${additionalCode}`;
+        this.code = `${this.code}
+${additionalCode}`;
     }
     newLine() {
         return Helper_Functions.getNewline();

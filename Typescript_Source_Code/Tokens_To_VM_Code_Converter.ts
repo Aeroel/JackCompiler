@@ -15,6 +15,8 @@ class Tokens_To_VM_Code_Converter {
     static vm_code = '';
     static className = 'none';
     static subName = 'none';
+    static FunctionArgCount = 0;
+    static passedParamCount = 0;
 
     static Save_VM_Code_In_Same_Dir_As_Path(filePath: string) {
         const vmFilePath = filePath + ".vm";
@@ -103,6 +105,7 @@ class Tokens_To_VM_Code_Converter {
 
         const subName = this.tokenizer.tokenValue();
         this.subName = subName;
+        this.vmWriter.writeFunction(`${subName}`, this.FunctionArgCount)
         Tokens_To_VM_Code_Converter.compile_subroutine_name();
         Tokens_To_VM_Code_Converter.consume('(');
         Tokens_To_VM_Code_Converter.compile_parameter_list();
@@ -122,8 +125,10 @@ class Tokens_To_VM_Code_Converter {
     static parameters_are_optional() {
         let paramIsEmpty = Boolean(this.tokenizer.tokenValue() === ')');
         if (paramIsEmpty) {
+            this.FunctionArgCount = 0;
             return;
         }
+        this.FunctionArgCount++;
         this.compile_param();
         this.then_zero_or_more_comma_separated_params();
     }
@@ -145,7 +150,7 @@ class Tokens_To_VM_Code_Converter {
             this.consume(',');
             this.compile_param_type();
             this.compile_param_name();
-
+            this.FunctionArgCount++;
             more_params = Boolean(this.tokenizer.tokenValue() === ',');
         }
     }
@@ -256,12 +261,14 @@ class Tokens_To_VM_Code_Converter {
     static compile_return_statement() {
         this.consume('return');
         this.compile_optional_return_value();
+        this.vmWriter.writeReturn();
         this.consume(';');
     }
     static compile_optional_return_value() {
         const returnStatementEndsNow = Boolean(this.tokenizer.tokenValue() === ';');
         const theOptionalReturnValueIsPresent = !returnStatementEndsNow;
         if (returnStatementEndsNow) {
+            this.vmWriter.writePush("const", 0);
             return;
         }
         this.compile_expression();
@@ -285,9 +292,11 @@ class Tokens_To_VM_Code_Converter {
 
         let anyMoreLeft = Boolean(operators.includes(Tokens_To_VM_Code_Converter.tokenizer.tokenValue()));
         while (anyMoreLeft) {
+            let op = this.tokenizer.tokenValue();
+            op = Tokens_Saver.escaped_to_normal(op);
             Tokens_To_VM_Code_Converter.consume_operator();
             Tokens_To_VM_Code_Converter.compile_term();
-
+            this.vmWriter.writeOp(op);
             anyMoreLeft = Boolean(operators.includes(Tokens_To_VM_Code_Converter.tokenizer.tokenValue()));
         }
     }
@@ -398,6 +407,8 @@ class Tokens_To_VM_Code_Converter {
     }
 
     static term_int_const() {
+        const int = Number(this.tokenizer.tokenValue());
+        this.vmWriter.writePush("const", int);
         Tokens_To_VM_Code_Converter.compile_token_type_and_value();
     }
     static term_str_const() {
@@ -461,7 +472,7 @@ class Tokens_To_VM_Code_Converter {
         this.consume('(');
         this.compile_expression_list();
         this.consume(')');
-        this.vmWriter.writeCall(`${className}.${subName}`);
+        this.vmWriter.writeCall(`${className}.${subName}`, this.passedParamCount);
 
     }
     static compile_class_or_var_name() {
@@ -491,15 +502,18 @@ class Tokens_To_VM_Code_Converter {
     }
     static compile_expression_list() {
         this.appendToXML(`<expressionList>`);
+        this.passedParamCount = 0;
         const endOfExpressionListMarker = ')';
         let moreThanZeroExpressions = Boolean(Tokens_To_VM_Code_Converter.tokenizer.tokenValue() !== endOfExpressionListMarker);
         if (!moreThanZeroExpressions) {
             this.appendToXML(`</expressionList>`);
             return;
         }
+        this.passedParamCount++;
         Tokens_To_VM_Code_Converter.compile_expression();
         let anyMoreExpressionsLeftToProcess = Boolean(Tokens_To_VM_Code_Converter.tokenizer.tokenValue() === ',');
         while (anyMoreExpressionsLeftToProcess) {
+            this.passedParamCount++;
             this.consume(',');
             Tokens_To_VM_Code_Converter.compile_expression();
             anyMoreExpressionsLeftToProcess = Boolean(Tokens_To_VM_Code_Converter.tokenizer.tokenValue() === ',');
