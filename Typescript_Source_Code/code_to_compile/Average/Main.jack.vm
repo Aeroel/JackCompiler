@@ -1,0 +1,15 @@
+
+function Main.main 0
+call Keyboard.readInt 1
+call Array.new 1
+push constant 0
+undefined
+call Keyboard.readInt 1
+add
+push constant 1
+add
+call Output.printString 1
+undefined
+call Output.printInt 1
+push constant 0
+return

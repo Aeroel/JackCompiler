@@ -36,6 +36,8 @@ class Tokens_To_VM_Code_Converter {
         Tokens_To_VM_Code_Converter.table = new Symbol_Table();
 
         Tokens_To_VM_Code_Converter.compile_class();
+        console.log(JSON.stringify(this.table.table));
+        
     }
     static compile_class_name() {
         const name = this.compile_identifier();
@@ -97,6 +99,7 @@ class Tokens_To_VM_Code_Converter {
     }
     static compile_class_subroutine_dec() {
         this.appendToXML(`<subroutineDec>`);
+        this.table.newSubroutine();
 
         const subType = this.tokenizer.tokenValue();
         Tokens_To_VM_Code_Converter.consume_constructor_or_function_or_method();
@@ -552,8 +555,11 @@ class Tokens_To_VM_Code_Converter {
     static compile_var_dec() {
         this.appendToXML('<varDec>');
         this.consume('var');
+        const varType = this.tokenizer.tokenValue();
         this.compile_var_type();
+        const varName = this.tokenizer.tokenValue();
         this.compile_var_name();
+        this.table.add(varName, "arg", varType)
         this.then_zero_or_more_comma_separated_var_decs();
         this.consume(';');
         this.appendToXML('</varDec>');
@@ -562,6 +568,8 @@ class Tokens_To_VM_Code_Converter {
         let moreCommaSeparatedVarDecs = Boolean(this.tokenizer.tokenValue() === ',');
         while (moreCommaSeparatedVarDecs) {
             this.compile_var_type();
+            const varName = this.tokenizer.tokenValue();
+            this.table.add(varName);
             this.compile_var_name();
             moreCommaSeparatedVarDecs = Boolean(this.tokenizer.tokenValue() === ',');
 
