@@ -1,15 +1,16 @@
+import fs from "node:fs";
+import { Comment_Remover } from "#root/Comment_Remover.js";
 import { Tokens_Saver } from "#root/Tokens_Saver.js";
 import { Code_To_Tokens_Converter } from "#root/Code_To_Tokens_Converter.js";
-import { Tokens_To_VM_Code_Converter as Tokens_To_VM_Code_Converter } from "#root/Tokens_To_VM_Code_Converter.js";
+import { Tokens_To_VM_Code_Converter } from "#root/Tokens_To_VM_Code_Converter.js";
 
 
-const provided_path_to_jack_file_from_command_line_argument = process.argv[2];
-const tokens = Code_To_Tokens_Converter.convert_code_to_tokens(provided_path_to_jack_file_from_command_line_argument);
-Tokens_Saver.save_tokens_in_the_same_directory_as_path(tokens, provided_path_to_jack_file_from_command_line_argument);
+const provided_path_from_command_line_argument = process.argv[2];
+const pathToFileWithoutComments = Comment_Remover.get_code_without_comments_from_file_at_path_and_save_to_a_new_file_in_the_same_directory(provided_path_from_command_line_argument);
+
+const codeWithoutComments = fs.readFileSync(pathToFileWithoutComments, "utf8");
+const tokens = Code_To_Tokens_Converter.convert_code_to_tokens(codeWithoutComments);
+Tokens_Saver.save_tokens_in_the_same_directory_as_path(tokens, pathToFileWithoutComments);
 
 Tokens_To_VM_Code_Converter.Convert_Tokens_Into_VM_Code(tokens);
-
-Tokens_To_VM_Code_Converter.Save_VM_Code_In_Same_Dir_As_Path(provided_path_to_jack_file_from_command_line_argument);
-
-
-
+Tokens_To_VM_Code_Converter.Save_VM_Code_In_Same_Dir_As_Path(provided_path_from_command_line_argument);

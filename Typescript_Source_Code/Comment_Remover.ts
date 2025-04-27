@@ -15,8 +15,15 @@ class Comment_Remover {
     static get_code_without_comments_from_file_at_path_and_save_to_a_new_file_in_the_same_directory(filePath: string) {
         const fileContents = this.getContentsFromFileAtPath(filePath);
         const codeWithoutComments = this.removeCommentsIfAny(fileContents);
-        return codeWithoutComments;
+        return this.save_code_without_comments_to_file_path_based_on_original_path(codeWithoutComments, filePath);
 
+    }
+    static save_code_without_comments_to_file_path_based_on_original_path(code: string, origPath: string) {
+        const newFilePath = origPath + ".comments_removed";
+        console.log(`[Comment_Remover] Writing code without comments to ${newFilePath}`);
+
+        fs.writeFileSync(newFilePath, code);
+        return newFilePath;
     }
     static getContentsFromFileAtPath(filePath: string) {
         console.log(`[Comment_Remover] Reading code from file at path ${filePath}`);

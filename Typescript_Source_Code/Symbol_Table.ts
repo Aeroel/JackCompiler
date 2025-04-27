@@ -9,6 +9,15 @@ class Symbol_Table {
     constructor() {
 
     }
+    isSymbolInTable(name: string): boolean {
+        let answer = false;
+        this.table.forEach(symbol => {
+            if(symbol.name === name) {
+                answer = true;
+            }
+        })
+        return answer
+    }
     newSubroutine() {
             // Clear var/arg symbols from the table
             this.table = this.table.filter(symbol => 
