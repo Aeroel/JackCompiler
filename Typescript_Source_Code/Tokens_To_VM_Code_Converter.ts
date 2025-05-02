@@ -232,17 +232,31 @@ class Tokens_To_VM_Code_Converter {
             Tokens_To_VM_Code_Converter.consume('[');
             Tokens_To_VM_Code_Converter.compile_expression();
             Tokens_To_VM_Code_Converter.consume(']');
+            this.vmWriter.writeOp("+")
         }
     }
     static compile_if_statement() {
         this.consume('if');
         this.consume('(');
         this.compile_expression();
+        this.vmWriter.writeOp("not");
+
+        this.vmWriter.beginIf();
+        this.vmWriter.writeIfGotoElseClause();
+
         this.consume(')');
         this.consume('{');
         this.compile_statements();
+
+        this.vmWriter.writeJumpToIfEnd();
+
         this.consume('}');
+
+        this.vmWriter.writeLabelElseClause();
+
         this.compile_optional_else_clause();
+
+        this.vmWriter.writeLabelIfEnd();
 
     }
     static compile_optional_else_clause() {
@@ -256,13 +270,17 @@ class Tokens_To_VM_Code_Converter {
         this.consume('}');
     }
     static compile_while_statement() {
+        this.vmWriter.beginWhile();
         this.consume('while');
         this.consume('(');
         this.compile_expression();
+        this.vmWriter.writeOp("not");
+        this.vmWriter.writeWhileExpJumpToEnd();
         this.consume(')');
         this.consume('{');
         this.compile_statements();
         this.consume('}');
+        this.vmWriter.endWhile();
     }
     static compile_do_statement() {
         this.consume('do');

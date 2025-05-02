@@ -7,7 +7,7 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const code_dir = join(__dirname, 'code_to_compile');
-const compilerPath = `"` +join(__dirname, "JackCompiler.js")+`"`;
+const compilerPath = `"` +join(__dirname, "JackCompiler.ts")+`"`;
 
 let totalCompilations = 0;
 let successCompilations = 0;
