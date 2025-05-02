@@ -15,6 +15,7 @@ class Tokens_To_VM_Code_Converter {
     static vm_code = '';
     static className = 'none';
     static subName = 'none';
+    static subType = 'none';
     static FunctionArgCount = 0;
     static passedParamCount = 0;
     static localsCount = 0;
@@ -103,6 +104,7 @@ class Tokens_To_VM_Code_Converter {
         this.table.newSubroutine();
 
         const subType = this.tokenizer.tokenValue();
+        this.subType = subType;
         Tokens_To_VM_Code_Converter.consume_constructor_or_function_or_method();
 
         Tokens_To_VM_Code_Converter.compile_subroutine_return_type();
@@ -113,6 +115,13 @@ class Tokens_To_VM_Code_Converter {
         Tokens_To_VM_Code_Converter.consume('(');
         Tokens_To_VM_Code_Converter.compile_parameter_list();
         Tokens_To_VM_Code_Converter.consume(')');
+        if(subType === 'constructor') {
+            const num = this.table.countKindEntries("field");
+            this.vmWriter.append(`push constant ${num}`);
+            this.vmWriter.append(`call Memory.alloc 1`);
+            this.vmWriter.append(`pop pointer 0`);
+            
+        }
         Tokens_To_VM_Code_Converter.compile_subroutine_body();
 
         this.appendToXML(`</subroutineDec>`);
@@ -455,9 +464,16 @@ class Tokens_To_VM_Code_Converter {
         Tokens_To_VM_Code_Converter.compile_token_type_and_value();
     }
     static term_keyword_const() {
-
+        const keyword = this.tokenizer.tokenValue();
         Tokens_To_VM_Code_Converter.compile_token_type_and_value();
-
+        switch(keyword) {
+            case "this":
+                this.vmWriter.append(`push pointer 0`);
+            break;
+            default:
+                throw new Error(`Unhandled keyword ${keyword}`)
+            break;
+        }
 
     }
 
