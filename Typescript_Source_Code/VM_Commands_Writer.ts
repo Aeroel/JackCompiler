@@ -95,6 +95,7 @@ class VM_Commands_Writer {
             ">": "gt",
             "=": "eq",
             "&": "and",
+            "|": "or",
 
             "~": "not",
             "not": "not",

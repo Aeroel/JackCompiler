@@ -719,10 +719,16 @@ class Tokens_To_VM_Code_Converter {
     }
     static compile_class_var_dec() {
         this.appendToXML(`<classVarDec>`);
-
+        const varKind = this.tokenizer.tokenValue();
+        if(!(varKind === "field" || varKind === 'static')) {
+            throw new Error('cannot be, compile_class_var_dec, ' + varKind);
+        }
         Tokens_To_VM_Code_Converter.consume_field_or_static_keyword();
+        const varType = this.tokenizer.tokenValue();
         Tokens_To_VM_Code_Converter.compile_var_type();
+        const varName = this.tokenizer.tokenValue();
         Tokens_To_VM_Code_Converter.compile_var_name();
+        this.table.add(varName, varKind, varType);
         this.compile_optional_comma_separated_additional_var_decs_of_same_type();
         this.consume(';');
 
@@ -732,6 +738,8 @@ class Tokens_To_VM_Code_Converter {
         let moreRemaining = Boolean(this.tokenizer.tokenValue() === ',');
         while (moreRemaining) {
             this.consume(',');
+            const varName = this.tokenizer.tokenValue();
+            this.table.add(varName);
             this.compile_var_name();
 
             moreRemaining = Boolean(this.tokenizer.tokenValue() === ',');
