@@ -15,7 +15,8 @@ class Tokens_To_VM_Code_Converter {
     static vm_code = '';
     static className = 'none';
     static subName = 'none';
-    static subType = 'none';
+    static subKind = 'none';
+    static subReturnType = 'none';
     static FunctionArgCount = 0;
     static passedParamCount = 0;
     static localsCount = 0;
@@ -103,10 +104,12 @@ class Tokens_To_VM_Code_Converter {
         this.appendToXML(`<subroutineDec>`);
         this.table.newSubroutine();
 
-        const subType = this.tokenizer.tokenValue();
-        this.subType = subType;
+        const subKind = this.tokenizer.tokenValue();
+        this.subKind = subKind;
         Tokens_To_VM_Code_Converter.consume_constructor_or_function_or_method();
 
+        const subReturnType =  this.tokenizer.tokenValue();
+        this.subReturnType =  subReturnType;
         Tokens_To_VM_Code_Converter.compile_subroutine_return_type();
 
         const subName = this.tokenizer.tokenValue();
@@ -115,12 +118,16 @@ class Tokens_To_VM_Code_Converter {
         Tokens_To_VM_Code_Converter.consume('(');
         Tokens_To_VM_Code_Converter.compile_parameter_list();
         Tokens_To_VM_Code_Converter.consume(')');
-        if(subType === 'constructor') {
+        if(subKind === 'constructor') {
             const num = this.table.countKindEntries("field");
             this.vmWriter.append(`push constant ${num}`);
             this.vmWriter.append(`call Memory.alloc 1`);
             this.vmWriter.append(`pop pointer 0`);
             
+        }
+        if(subKind === 'method' ) {
+            this.vmWriter.append("push argument 0");
+            this.vmWriter.append("pop pointer 0");
         }
         Tokens_To_VM_Code_Converter.compile_subroutine_body();
 
@@ -220,13 +227,19 @@ class Tokens_To_VM_Code_Converter {
 
         this.consume('let');
         const varName = this.tokenizer.tokenValue();
+        const varSymbol = this.table.getSymbol(varName);
+        const varSegment = Symbol_Table.kindToSegment(varSymbol.kind);
         this.compile_let_var_name();
+        this.vmWriter.append(`push ${varSegment} ${varSymbol.index}`);
         this.compile_optional_array_access_notation();
 
         this.consume('=');
         this.compile_expression();
         this.consume(';');
-
+        this.vmWriter.append("pop temp 0");
+        this.vmWriter.append("pop pointer 1");
+        this.vmWriter.append("push temp 0");
+        this.vmWriter.append("pop that 0");
         console.log("varName:"+varName);
         const symbol = this.table.getSymbol(varName);
   
@@ -295,6 +308,7 @@ class Tokens_To_VM_Code_Converter {
         this.consume('do');
         this.compile_subroutine_call();
         this.consume(';');
+        this.vmWriter.writePop("temp", 0);
     }
     static compile_return_statement() {
         this.consume('return');
@@ -470,6 +484,15 @@ class Tokens_To_VM_Code_Converter {
             case "this":
                 this.vmWriter.append(`push pointer 0`);
             break;
+            case "true":
+                // -1
+                this.vmWriter.append(`push constant 1`);
+                this.vmWriter.append(`neg`);
+            break;
+            case "false":
+            case "null":
+                this.vmWriter.append(`push constant 0`)
+            break;
             default:
                 throw new Error(`Unhandled keyword ${keyword}`)
             break;
@@ -481,15 +504,33 @@ class Tokens_To_VM_Code_Converter {
         Tokens_To_VM_Code_Converter.compile_term_var_name();
     }
     static term_var_name_array_access() {
+        const varName = this.tokenizer.tokenValue();
+        const varSymbol = this.table.getSymbol(varName);
+        const segment = Symbol_Table.kindToSegment(varSymbol.kind);
+        this.vmWriter.append(`push ${segment} ${varSymbol.index}`)
 
         Tokens_To_VM_Code_Converter.compile_identifier();
         Tokens_To_VM_Code_Converter.consume('[');
         Tokens_To_VM_Code_Converter.compile_expression();
         Tokens_To_VM_Code_Converter.consume(']');
+        
+        this.vmWriter.append("add");
+    }
+    static compile_self_method_subroutine_call() {
+        const methodName =   this.tokenizer.tokenValue();
+        this.consume(methodName);
+        const className = this.className;
+        this.vmWriter.writePush("argument", 0);
+        this.consume("(");
+        this.compile_expression_list();
+        this.passedParamCount++; // to account for this;
+        this.consume(")");
+        const VMFullMethodName = `${className}.${methodName}`;
+        this.vmWriter.writeCall(VMFullMethodName, this.passedParamCount);
     }
     static term_subroutine_call() {
-        const normalSubroutineCall = Boolean(this.tokenizer.nextTokenValue() === '(');
-        if (normalSubroutineCall) {
+        const insideSelfMethodSubroutineCall = Boolean(this.tokenizer.nextTokenValue() === '(');
+        if (insideSelfMethodSubroutineCall) {
             this.compile_subroutine_name();
             this.consume('(');
             this.compile_expression_list();
@@ -503,6 +544,7 @@ class Tokens_To_VM_Code_Converter {
             let isObjCall = false;
             if(this.table.isSymbolInTable(classNameOrObjName)) {
                 isObjCall = true;
+                this.compile_obj_call();
             } else {
                 isClassStaticCall = true;
                 this.compile_class_static_call();
@@ -517,6 +559,25 @@ class Tokens_To_VM_Code_Converter {
             // this.consume(')');
         }
 
+    }
+    static compile_obj_call() {
+        const objVarName =   this.tokenizer.tokenValue();
+        this.consume(objVarName);
+        this.consume(".");
+        const objSymbolEntry = this.table.getSymbol(objVarName);
+        const objClassName = objSymbolEntry.type;
+        const objCalledMethodName = this.tokenizer.tokenValue();
+        this.consume(objCalledMethodName);
+        const VMFullMethodName = `${objClassName}.${objCalledMethodName}`;
+        const segment = Symbol_Table.kindToSegment(objSymbolEntry.kind);
+        this.vmWriter.writePush(segment, objSymbolEntry.index);
+        this.consume("(");
+        this.compile_expression_list();
+        this.passedParamCount++; // to account for this;
+        this.consume(")");
+        this.vmWriter.writeCall(VMFullMethodName, this.passedParamCount);
+
+        
     }
     static compile_class_static_call() {
         const className = this.tokenizer.tokenValue();
@@ -551,6 +612,7 @@ class Tokens_To_VM_Code_Converter {
     static term_unary_op_term() {
         Tokens_To_VM_Code_Converter.consume_unary_op();
         this.compile_term();
+        this.vmWriter.append("neg");
     }
     static consume_unary_op() {
         this.consume(this.tokenizer.tokenValue());

@@ -1,6 +1,6 @@
 import { assert } from "node:console";
 import { Helper_Functions } from "./Helper_Functions.js";
-import type { Symbol_Table } from "./Symbol_Table.js";
+import { Symbol_Table } from "./Symbol_Table.js";
 import { Tokens_To_VM_Code_Converter } from "./Tokens_To_VM_Code_Converter.js";
 import type { Jack_Symbol, Segment } from "./Type_Definitions.js";
 
@@ -49,7 +49,7 @@ class VM_Commands_Writer {
         this.append(`label WHILE_END${this.currentWhileId}`);
     }
     writePush(segment: Segment, index: Symbol_Table["table"][number]["index"]) {
-        let segment_real = segment;
+        let segment_real = Symbol_Table.kindToSegment(segment as Jack_Symbol["kind"]);
         if ((segment as Jack_Symbol["kind"]) === 'var') {
             segment_real = 'local';
         }
@@ -84,7 +84,7 @@ class VM_Commands_Writer {
     writeOp(op: string) {
         const map: Record<string, string> = {
             "*": "call Math.multiply 2",
-
+            "/": "call Math.divide 2",
             "+": "add",
             "<": "lt",
             ">": "gt",

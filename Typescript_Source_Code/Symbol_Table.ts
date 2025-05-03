@@ -1,4 +1,4 @@
-import type { Jack_Symbol } from "./Type_Definitions.js";
+import type { Jack_Symbol, Segment } from "./Type_Definitions.js";
 
 export { Symbol_Table }
 class Symbol_Table {
@@ -8,6 +8,29 @@ class Symbol_Table {
 
     constructor() {
 
+    }
+    static kindToSegment(kind: Jack_Symbol["kind"]): Segment {
+        let segment: Segment = 'argument';
+
+        switch(kind) {
+            case "argument":
+                segment = "argument";
+            break;
+            case "var":
+                segment = "local";
+            break;
+            case "field":
+                segment = "this";
+            break;
+            case "static":
+                segment = "static";
+            break;
+            default:
+                throw new Error("Cannot Happen. Kind passed " + kind)
+            break;
+        }
+        return segment;
+        
     }
     isSymbolInTable(name: string): boolean {
         console.log(JSON.stringify(this.table));
