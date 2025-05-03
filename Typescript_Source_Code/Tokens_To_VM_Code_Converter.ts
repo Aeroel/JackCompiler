@@ -22,7 +22,7 @@ class Tokens_To_VM_Code_Converter {
     static localsCount = 0;
 
     static Save_VM_Code_In_Same_Dir_As_Path(filePath: string) {
-        const vmFilePath = filePath + ".vm";
+        const vmFilePath = filePath + ".my.vm";
         console.log(`[Tokens To VM Code] Saving VM Code into new file at ${vmFilePath}`);
         const vmCode = this.vmWriter.getCode();
         fs.writeFileSync(vmFilePath, vmCode);
@@ -241,10 +241,6 @@ class Tokens_To_VM_Code_Converter {
         this.vmWriter.append("push temp 0");
         this.vmWriter.append("pop that 0");
         console.log("varName:"+varName);
-        const symbol = this.table.getSymbol(varName);
-  
-        
-        this.vmWriter.writePop(symbol.kind as Segment, symbol.index);
 
     }
     static compile_optional_array_access_notation() {
@@ -513,7 +509,7 @@ class Tokens_To_VM_Code_Converter {
         Tokens_To_VM_Code_Converter.consume('[');
         Tokens_To_VM_Code_Converter.compile_expression();
         Tokens_To_VM_Code_Converter.consume(']');
-        
+
         this.vmWriter.append("add");
     }
     static compile_self_method_subroutine_call() {
@@ -748,7 +744,8 @@ class Tokens_To_VM_Code_Converter {
         
         Tokens_To_VM_Code_Converter.compile_identifier(); 
         const symbol = this.table.getSymbol(varName);
-        this.vmWriter.writePush(symbol.kind as Segment,symbol.index);
+        const segment = Symbol_Table.kindToSegment(symbol.kind)
+        this.vmWriter.writePush(segment, symbol.index);
     }
     static compile_let_var_name() {
         Tokens_To_VM_Code_Converter.compile_identifier();

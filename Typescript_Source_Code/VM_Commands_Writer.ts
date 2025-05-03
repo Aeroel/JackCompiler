@@ -49,20 +49,12 @@ class VM_Commands_Writer {
         this.append(`label WHILE_END${this.currentWhileId}`);
     }
     writePush(segment: Segment, index: Symbol_Table["table"][number]["index"]) {
-        let segment_real = Symbol_Table.kindToSegment(segment as Jack_Symbol["kind"]);
-        if ((segment as Jack_Symbol["kind"]) === 'var') {
-            segment_real = 'local';
-        }
-        this.throwIfSegmentIsInvalid(segment_real);
-        this.append(`push ${segment_real} ${index}`);
+        this.throwIfSegmentIsInvalid(segment);
+        this.append(`push ${segment} ${index}`);
     }
     writePop(segment: Segment, index: Symbol_Table["table"][number]["index"]) {
-        let segment_real = segment;
-        if ((segment as Jack_Symbol["kind"]) === 'var') {
-            segment_real = 'local';
-        }
-        this.throwIfSegmentIsInvalid(segment_real);
-        this.append(`pop ${segment_real} ${index}`);
+        this.throwIfSegmentIsInvalid(segment);
+        this.append(`pop ${segment} ${index}`);
     }
     throwIfSegmentIsInvalid(segment: string) {
         if (!(this.validSegments.includes(segment))) {
