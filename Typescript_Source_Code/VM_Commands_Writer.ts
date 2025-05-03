@@ -18,35 +18,47 @@ class VM_Commands_Writer {
     constructor() {
 
     }
+    getFullSubName() {
+        return `${Tokens_To_VM_Code_Converter.className}.${Tokens_To_VM_Code_Converter.subName}`;
+    }
     beginIf() {
-        this.currentIfId = this.ifNextId;
+        const ifId = this.ifNextId;
         this.ifNextId++;
+        return ifId;
     }
-    writeIfGotoElseClause() {
-        this.append(`if-goto IF_ELSE${this.currentIfId}`);
+    writeIfGotoElseClause(ifId: number) {
+        const fullSubName = this.getFullSubName();
+        this.append(`if-goto ${fullSubName}$IF_ELSE${ifId}`);
     }
-    writeLabelIfEnd() {
-        this.append(`label IF_END${this.currentIfId}`);
+    writeLabelIfEnd(ifId: number) {
+        const fullSubName = this.getFullSubName();
+        this.append(`label ${fullSubName}$IF_END${ifId}`);
     }
-    writeJumpToIfEnd() {
-        this.append(`goto IF_END${this.currentIfId}`);
+    writeJumpToIfEnd(ifId: number) {
+        const fullSubName = this.getFullSubName();
+        this.append(`goto ${fullSubName}$IF_END${ifId}`);
     }
-    writeLabelElseClause() {
-        this.append(`label IF_ELSE${this.currentIfId}`);
+    writeLabelElseClause(ifId: number) {
+        const fullSubName = this.getFullSubName();
+        this.append(`label ${fullSubName}$IF_ELSE${ifId}`);
     }
 
 
     beginWhile() {
-        this.currentWhileId = this.whileNextId;
+        const whileId = this.whileNextId;
         this.whileNextId++;
-        this.append(`label WHILE_EXP${this.currentWhileId}`);
+        const fullSubName = this.getFullSubName();
+        this.append(`label ${fullSubName}$WHILE_EXP${whileId}`);
+        return whileId;
     }
-    writeWhileExpJumpToEnd() {
-        this.append(`if-goto WHILE_END${this.currentWhileId}`);
+    writeWhileExpJumpToEnd(whileId: number) {
+        const fullSubName = this.getFullSubName();
+        this.append(`if-goto ${fullSubName}$WHILE_END${whileId}`);
     }
-    endWhile() {
-        this.append(`goto WHILE_EXP${this.currentWhileId}`);
-        this.append(`label WHILE_END${this.currentWhileId}`);
+    endWhile(whileId: number) {
+        const fullSubName = this.getFullSubName();
+        this.append(`goto ${fullSubName}$WHILE_EXP${whileId}`);
+        this.append(`label ${fullSubName}$WHILE_END${whileId}`);
     }
     writePush(segment: Segment, index: Symbol_Table["table"][number]["index"]) {
         this.throwIfSegmentIsInvalid(segment);
@@ -78,13 +90,19 @@ class VM_Commands_Writer {
             "*": "call Math.multiply 2",
             "/": "call Math.divide 2",
             "+": "add",
+            "-": "sub",
             "<": "lt",
             ">": "gt",
+            "=": "eq",
+            "&": "and",
 
             "~": "not",
             "not": "not",
         }
         const mapped = map[op];
+        if(String(mapped) === 'undefined') {
+            throw new Error(`WriteOp:${mapped}: ${op}`)
+        }
         this.append(`${mapped}`);
 
     }
