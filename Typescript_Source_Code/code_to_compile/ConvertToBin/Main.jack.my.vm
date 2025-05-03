@@ -32,7 +32,7 @@ pop local 0
 push local 1
 push constant 16
 gt
-neg
+not
 not
 if-goto Main.convert$IF_ELSE0
 push argument 0
@@ -40,7 +40,7 @@ push local 0
 and
 push constant 0
 eq
-neg
+not
 not
 if-goto Main.convert$IF_ELSE1
 push constant 8000

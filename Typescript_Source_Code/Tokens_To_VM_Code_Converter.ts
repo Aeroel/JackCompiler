@@ -177,7 +177,7 @@ class Tokens_To_VM_Code_Converter {
             // param name
             const paramName = this.tokenizer.tokenValue();
             this.compile_param_name();
-    
+
             this.table.add(paramName, "argument", paramType);
             this.FunctionArgCount++;
             more_params = Boolean(this.tokenizer.tokenValue() === ',');
@@ -625,9 +625,20 @@ class Tokens_To_VM_Code_Converter {
 
     }
     static term_unary_op_term() {
+        const unary_op = this.tokenizer.tokenValue();
         Tokens_To_VM_Code_Converter.consume_unary_op();
         this.compile_term();
-        this.vmWriter.append("neg");
+        switch (unary_op) {
+            case "~":
+                this.vmWriter.append("not");
+            break;
+            case "-":
+                this.vmWriter.append("neg");
+            break;
+            default:
+                throw new Error(`term_unary_op_term(): must never happen`);
+            break;
+        }
     }
     static consume_unary_op() {
         this.consume(this.tokenizer.tokenValue());
