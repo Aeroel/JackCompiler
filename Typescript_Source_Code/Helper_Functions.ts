@@ -6,4 +6,9 @@ class Helper_Functions {
     static getNewline() {
        return this.newlines.linux;
     }
+    static assert(value: boolean, msg: string) {
+        if(!value) {
+            throw new Error(msg);
+        }
+    }
 }

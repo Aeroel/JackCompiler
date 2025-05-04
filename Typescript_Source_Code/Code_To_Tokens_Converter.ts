@@ -1,4 +1,5 @@
 import type { Token } from "#root/Type_Definitions.js";
+import { Comment_Remover } from "./Comment_Remover.js";
 
 export { Code_To_Tokens_Converter };
 class Code_To_Tokens_Converter {
@@ -31,7 +32,13 @@ class Code_To_Tokens_Converter {
     static there_are_characters_left_to_process = false;
     static code = '';
 
+    static stripComments(code: string): string {
+        const codeWithoutComments = Comment_Remover.removeCommentsIfAny(code);
+        return codeWithoutComments;
+
+    }
     static convert_code_to_tokens(code: string) {
+        const codeWithoutComments = Code_To_Tokens_Converter.stripComments(code);
         this.code = code;
         this.currentCharIndex = 0;
         this.there_are_characters_left_to_process = Boolean(this.currentCharIndex < code.length);
