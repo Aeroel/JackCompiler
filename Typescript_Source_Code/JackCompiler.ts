@@ -4,7 +4,10 @@ import { Tokens_Saver } from "#root/Tokens_Saver.js";
 import { Code_To_Tokens_Converter } from "#root/Code_To_Tokens_Converter.js";
 import { Tokens_To_VM_Code_Converter } from "#root/Tokens_To_VM_Code_Converter.js";
 
-
+const oldLog = console.log;
+console.log = () => {
+    // do nothing
+}
 const provided_path_from_command_line_argument = process.argv[2];
 const pathToFileWithoutComments = Comment_Remover.get_code_without_comments_from_file_at_path_and_save_to_a_new_file_in_the_same_directory(provided_path_from_command_line_argument);
 
