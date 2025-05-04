@@ -118,17 +118,6 @@ class Tokens_To_VM_Code_Converter {
         Tokens_To_VM_Code_Converter.consume('(');
         Tokens_To_VM_Code_Converter.compile_parameter_list();
         Tokens_To_VM_Code_Converter.consume(')');
-        if (subKind === 'constructor') {
-            const num = this.table.countKindEntries("field");
-            this.vmWriter.append(`push constant ${num}`);
-            this.vmWriter.append(`call Memory.alloc 1`);
-            this.vmWriter.append(`pop pointer 0`);
-
-        }
-        if (subKind === 'method') {
-            this.vmWriter.append("push argument 0");
-            this.vmWriter.append("pop pointer 0");
-        }
         Tokens_To_VM_Code_Converter.compile_subroutine_body();
 
         this.appendToXML(`</subroutineDec>`);
@@ -188,9 +177,23 @@ class Tokens_To_VM_Code_Converter {
         this.consume('{');
         this.compile_zero_or_more_var_decs();
         this.vmWriter.writeFunction(`${this.subName}`, this.localsCount)
+        this.prelude();
         this.compile_statements();
         this.consume('}');
         this.appendToXML(`</subroutineBody>`);
+    }
+    static prelude() {
+        if (this.subKind === 'constructor') {
+            const num = this.table.countKindEntries("field");
+            this.vmWriter.append(`push constant ${num}`);
+            this.vmWriter.append(`call Memory.alloc 1`);
+            this.vmWriter.append(`pop pointer 0`);
+
+        }
+        if (this.subKind === 'method') {
+            this.vmWriter.append("push argument 0");
+            this.vmWriter.append("pop pointer 0");
+        }
     }
     static compile_statements() {
         Tokens_To_VM_Code_Converter.appendToXML(`<statements>`);
@@ -543,13 +546,11 @@ class Tokens_To_VM_Code_Converter {
         const VMFullMethodName = `${className}.${methodName}`;
         this.vmWriter.writeCall(VMFullMethodName, this.passedParamCount);
     }
+
     static term_subroutine_call() {
         const insideSelfMethodSubroutineCall = Boolean(this.tokenizer.nextTokenValue() === '(');
         if (insideSelfMethodSubroutineCall) {
-            this.compile_subroutine_name();
-            this.consume('(');
-            this.compile_expression_list();
-            this.consume(')');
+            this.compile_self_call();
             return;
         }
         const classStaticOrObjCall = Boolean(this.tokenizer.nextTokenValue() === '.');
@@ -574,6 +575,17 @@ class Tokens_To_VM_Code_Converter {
             // this.consume(')');
         }
 
+    }
+    static compile_self_call() {
+        const subName = this.tokenizer.tokenValue();
+        this.consume(subName);
+        const VMFullMethodName = `${this.className}.${subName}`;
+        this.vmWriter.writePush("pointer", 0);
+        this.consume("(");
+        this.compile_expression_list();
+        this.passedParamCount++; // to account for this;
+        this.consume(")");
+        this.vmWriter.writeCall(VMFullMethodName, this.passedParamCount);
     }
     static compile_obj_call() {
         const objVarName = this.tokenizer.tokenValue();
