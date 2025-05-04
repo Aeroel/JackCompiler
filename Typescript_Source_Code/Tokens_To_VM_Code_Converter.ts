@@ -127,6 +127,9 @@ class Tokens_To_VM_Code_Converter {
     }
     static compile_parameter_list() {
         this.appendToXML(`<parameterList>`);
+        if(this.subKind === 'method') {
+            this.table.add("this", "argument", this.className);
+        }
         this.parameters_are_optional();
         this.appendToXML(`</parameterList>`);
     }
