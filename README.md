@@ -1,5 +1,5 @@
 Jack compiler...
-I am gonna transform a copy of jack analyzer (I mean https://github.com/Aeroel/JackAnalyzer/settings ) into a compiler.
+I am gonna transform a copy of jack analyzer (I mean https://github.com/Aeroel/JackAnalyzer ) into a compiler.
 To clarify, the compiler does this: transform jack files into vm files (nand2tetris course)
 
 Currently, I am in the process of, well... writing the compiler.
